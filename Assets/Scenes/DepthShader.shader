@@ -48,8 +48,8 @@ Shader "Custom/DepthShader"
                 // Read depth from depth texture
                 float depth = tex2D(_CameraDepthTexture, i.uv).r;
                 // Convert depth to brightness (closer = brighter)
-                // float brightness = pow(((_DepthMultiplier) * depth ), _DepthPower)+ _DepthAdd;
-                float brightness = (depth - 0.6)/5.4;
+                float brightness = pow(((_DepthMultiplier) * depth ), _DepthPower)+ _DepthAdd;
+                // float brightness = (depth - 0.6)/5.4;
                 if(_UseEffect < 0.5){
                      brightness =  1.0 - clamp(brightness, 0.0, 1);// not to let values exceed 1
                 } else {
