@@ -7,8 +7,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class FoxgloveWebSocketClient : MonoBehaviour
+public class SimpleWebSocket : MonoBehaviour
 {
+    public string uri = "ws://100.74.140.75:8765"; //ubuntu laptop
+    [Space]
     private ClientWebSocket clientWebSocket;
     private int x = 0;
     private async void Start()
@@ -17,12 +19,10 @@ public class FoxgloveWebSocketClient : MonoBehaviour
         
         //this was a bitch to figure out
         clientWebSocket.Options.AddSubProtocol("foxglove.websocket.v1");
-
-        string uri = "ws://100.74.140.75:8765"; //ubuntu laptop
-
+ 
         try
         {
-            Debug.Log($"Connecting to {uri} with subprotocol 'foxglove.websocket.v1'...");
+            Debug.Log($"Connecting to {uri}...");
             await clientWebSocket.ConnectAsync(new Uri(uri), CancellationToken.None);
 
             if (clientWebSocket.SubProtocol == "foxglove.websocket.v1")
@@ -31,7 +31,7 @@ public class FoxgloveWebSocketClient : MonoBehaviour
             }
             else
             {
-                Debug.LogError("Subprotocol negotiation failed or server does not support 'foxglove.websocket.v1'.");
+                Debug.LogError("Subprotocal not negotiated :(");
             }
             _ = Task.Run(() => ReceiveRawData());
             subscribeToChatter();
@@ -46,9 +46,9 @@ public class FoxgloveWebSocketClient : MonoBehaviour
             Debug.LogError($"Unexpected error: {ex.Message}");
         }
     }
-    private async Task ReceiveRawData()
+    private async Task ReceiveRawData() //tasks run parallel to other processes
     {
-        byte[] buffer = new byte[1024*64]; 
+        byte[] buffer = new byte[1024*64]; //arbitrary buffer, made it massive so we dont separate anything by accident
         while (clientWebSocket.State == WebSocketState.Open)
         {
             try
@@ -113,7 +113,7 @@ public class FoxgloveWebSocketClient : MonoBehaviour
 
 
     private void OnApplicationQuit()
-    {
+    { //null conditional operator ?. checks if clientWebSocket is not null
         clientWebSocket?.Dispose();
     }
 }
