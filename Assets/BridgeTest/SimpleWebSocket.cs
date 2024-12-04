@@ -1,6 +1,8 @@
 //By Graeme :)
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -11,8 +13,10 @@ public class SimpleWebSocket : MonoBehaviour
 {
     public string uri = "ws://100.74.140.75:8765"; //ubuntu laptop
     [Space]
-    private ClientWebSocket clientWebSocket;
+    public string bits;
+    public ClientWebSocket clientWebSocket;
     private int x = 0;
+    
     private async void Start()
     {
         clientWebSocket = new ClientWebSocket();
@@ -62,12 +66,11 @@ public class SimpleWebSocket : MonoBehaviour
                 }
 
                 
-                string bits = BitConverter.ToString(buffer, 0, result.Count);
+                bits = BitConverter.ToString(buffer, 0, result.Count); //make public var and connect to next script
                 Debug.Log($"Received raw data{x++}: {bits}");
 
                 
-                string message = ConvertHexToString(bits);
-                Debug.Log($"Interpreted as text: {message}");
+                Decode(bits);
             }
             catch (Exception ex)
             {
@@ -76,6 +79,54 @@ public class SimpleWebSocket : MonoBehaviour
             }
         }
     }
+    private void Decode(String bits){ //message is in little endian
+        // int subId;
+        
+        char opcode = bits.Substring(1,2)[0];
+        
+        if(opcode == '1'){
+            
+            string[] hexvaluesarr = bits.Substring(2).Split('-'); //all bits after opcode
+            List<string> hexvalues = hexvaluesarr.ToList();
+            
+            List<int> time = new List<int>();
+            int subID = 0;
+            for(int i = 3; i >= 0; i--){ //iterate through first 4 bytes for subscription id
+            subID+=Convert.ToInt32(hexvalues[i], 16); //hopefully that turns it into base 10, throws error if i specify base 10
+            
+            
+            }
+            hexvalues.RemoveRange(0,4);
+            
+            //iterate through next section (8 bytes) of message (time - nanoseconds)
+            for(int i = 7; i >= 0; i--){ 
+            time.Add(Convert.ToInt32(hexvalues[i], 16));
+            }
+            hexvalues.RemoveRange(0,8);
+            
+            //iterate through next section of message (payload)
+            Debug.Log(hexvalues.ToString());
+            List<byte> byteArray = new List<byte>();
+            foreach(string hex in hexvalues)
+            {
+                byteArray.Add(Convert.ToByte(hex, 16)); // Convert each hex string to a byte
+                Debug.Log("fixed");
+            }
+            string message = Encoding.ASCII.GetString(byteArray.ToArray());
+            Debug.Log(subID);
+            Debug.Log(time.ToString());
+            Debug.Log(message);
+            
+        }
+
+        // byte[] bytes = Encoding.UTF8.GetBytes(bits);
+        //very very very helpful for this: https://github.com/foxglove/ws-protocol/blob/main/docs/spec.md#binary-messages
+        
+
+    }
+
+
+
     private async void subscribeToChatter()
     {
         string subscriptionJson = @"{
@@ -93,23 +144,7 @@ public class SimpleWebSocket : MonoBehaviour
         await clientWebSocket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
     }
 
-    private string ConvertHexToString(string hex)
-    {
-        
-        hex = hex.Replace("-", "").Replace(" ", "");
-
-
-        // Convert hex string to byte array
-        byte[] bytes = new byte[hex.Length / 2];
-        for (int i = 0; i < hex.Length; i += 2)
-        {
-            bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-        }
-
-        // Convert byte array to string (UTF-8 encoding)
-        string result = Encoding.UTF8.GetString(bytes);
-        return result;
-    }
+    
 
 
     private void OnApplicationQuit()
