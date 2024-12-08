@@ -21,7 +21,7 @@ public class SimpleWebSocket : MonoBehaviour
     {
         clientWebSocket = new ClientWebSocket();
         
-        //this was a bitch to figure out
+        //this was a b**** to figure out
         clientWebSocket.Options.AddSubProtocol("foxglove.websocket.v1");
  
         try
@@ -65,17 +65,21 @@ public class SimpleWebSocket : MonoBehaviour
                     break;
                 }
 
-                
-                bits = BitConverter.ToString(buffer, 0, result.Count); //make public var and connect to next script
-                Debug.Log($"Received raw data{x++}: {bits}");
+                if (result.Count > 0 && result.Count <= buffer.Length)
+                {
+                    bits = BitConverter.ToString(buffer, 0, result.Count); // Make public var and connect to next script
+                    Debug.Log($"Received raw data{x++}: {bits}");
 
-                
-                Decode(bits);
+                    Decode(bits);
+                }
+                else
+                {
+                    Debug.LogError("Received data count is out of buffer bounds.");
+                }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"Error while receiving data: {ex.Message}");
-                break;
             }
         }
     }

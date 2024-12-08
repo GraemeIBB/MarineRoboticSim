@@ -1,5 +1,8 @@
 /* This exists to create generated json strings
- that aim to subscribe or publish to topics*/
+ that aim to subscribe or publish to topics
+ 
+ as of right now, it is not functional
+ */
 using System.Text;
 using UnityEngine;
 
