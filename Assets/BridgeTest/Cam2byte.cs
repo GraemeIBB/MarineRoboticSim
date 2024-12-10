@@ -1,5 +1,7 @@
 using UnityEngine;
+using System;
 using System.IO;
+using System.Threading.Tasks;
 
 public class Cam2byte : MonoBehaviour
 {
@@ -9,18 +11,27 @@ public class Cam2byte : MonoBehaviour
 
     void Start()
     {
-        socket = GetComponent<SimpleWebSocket>();
         renderTexture = new RenderTexture(640, 480, 24, UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_SRGB);
         renderTexture.Create();
         camera.targetTexture = renderTexture;
 
-        byte[] bits = CaptureScreenshot();
-        SavePNG(bits);
+        socket = GetComponent<SimpleWebSocket>();
+
+        // Start the screenshot capture and send process in another thread
+        Task.Run(() => CaptureAndSendLoop());
     }
 
-    void FixedUpdate()
+    private async Task CaptureAndSendLoop()
     {
-        // capture screenshot, send bytes, delete screenshot
+        while (true)
+        {
+            Debug.Log("Taking screenshot");
+            byte[] bits = CaptureScreenshot();
+            Debug.Log("Screenshot taken");
+            await socket.sendCam(bits);
+            await Task.Delay(100); // Adjust the delay as needed
+            Debug.Log("Screenshot sent");
+        }
     }
 
     byte[] CaptureScreenshot()
@@ -36,17 +47,10 @@ public class Cam2byte : MonoBehaviour
 
         RenderTexture.active = currentRT;
 
-        byte[] bytes = image.EncodeToPNG();
-        byte[] bytes2 = image.GetRawTextureData(); //raw pixel data
+        // byte[] bytes = image.EncodeToPNG();
+        byte[] bytes = image.GetRawTextureData();
         Destroy(image);
 
         return bytes;
-    }
-
-    void SavePNG(byte[] bytes)
-    {
-        string path = Path.Combine(Application.dataPath + "/BridgeTest/Photos", "screenshot.png");
-        File.WriteAllBytes(path, bytes);
-        Debug.Log($"Screenshot saved to: {path}");
     }
 }

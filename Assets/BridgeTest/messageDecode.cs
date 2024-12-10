@@ -37,6 +37,11 @@ public class messageDecode : MonoBehaviour
     public void Decode(string bitstream)
     {
         byte[] data = StringToByteArray(bitstream);
+        if (data.Length > 1024*16)
+        {
+            Debug.LogError("Message is too large to be printed");
+            return;
+        }
 
         if (data.Length < 1)
         {
@@ -58,7 +63,7 @@ public class messageDecode : MonoBehaviour
                 break;
             // Add cases for other opcodes here
             default:
-                Debug.LogError("Unknown opcode.");
+                DecodeDefault(data);
                 break;
         }
     }
@@ -110,6 +115,10 @@ public class messageDecode : MonoBehaviour
         // 4	uint32	encoding length
         // encoding length	char[]	encoding, same encoding that was used for the request
         // remaining bytes	uint8[]	response payload
+    }
+    private void DecodeDefault(byte[] data)
+    {
+        Debug.Log(Encoding.ASCII.GetString(data));
     }
 
     private byte[] StringToByteArray(string hex)

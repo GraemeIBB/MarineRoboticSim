@@ -53,6 +53,8 @@ public class SimpleWebSocket : MonoBehaviour
             }
             _ = Task.Run(() => ReceiveRawData());
             subscribeToChatter();
+            advertiseCam();
+            advertiseCamCal();
             
         }
         catch (WebSocketException ex)
@@ -66,7 +68,7 @@ public class SimpleWebSocket : MonoBehaviour
     }
     private async Task ReceiveRawData() //tasks run parallel to other processes
     {
-        byte[] buffer = new byte[1024*64]; //arbitrary buffer, made it massive so we dont separate anything by accident
+        byte[] buffer = new byte[1024*16]; //arbitrary buffer, made it massive so we dont separate anything by accident
         while (clientWebSocket.State == WebSocketState.Open)
         {
             try
@@ -79,10 +81,10 @@ public class SimpleWebSocket : MonoBehaviour
                     break;
                 }
 
-                if (result.Count > 0 && result.Count <= buffer.Length)
+                if (result.Count > 0 && result.Count <= buffer.Length) //safe check for buffer overflow
                 {
                     bits = BitConverter.ToString(buffer, 0, result.Count); // Make public var and connect to next script
-                    Debug.Log($"Received raw data{x++}: {bits}");
+                    // Debug.Log($"Received raw data{x++}: {bits}"); // dangerous with large data, unity can crash
 
                     
                 }
@@ -117,8 +119,70 @@ public class SimpleWebSocket : MonoBehaviour
         var bytes = Encoding.UTF8.GetBytes(subscriptionJson);
         await clientWebSocket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
     }
+    private async void advertiseCam() //generalize to any topic
+    {
+        string Json = @"{
+            ""op"": ""advertise"",
+            ""channels"": [
+                {
+                    ""id"": 4,
+                    ""topic"": ""Unity/camera"",
+                    ""encoding"": ""rgb8"",
+                    ""schemaName"": ""sensor_msgs/msg/Image""
+                }
+            ]
+        }";
+
+        var bytes = Encoding.UTF8.GetBytes(Json);
+        await clientWebSocket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+    private async void advertiseCamCal(){
+        string Json = @"{
+            ""op"": ""advertise"",
+            ""channels"": [
+                {
+                    ""id"": 5,
+                    ""topic"": ""Unity/camera_info"",
+                    ""encoding"": ""json"",
+                    ""schemaName"": ""sensor_msgs/msg/CameraInfo""
+                }
+            ]
+        }";
+        var bytes = Encoding.UTF8.GetBytes(Json);
+        await clientWebSocket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+    public async Task sendCam(byte[] bytes)
+    {
+        DateTime now = DateTime.UtcNow;
+        long unixTime = ((DateTimeOffset)now).ToUnixTimeSeconds();
+        int nanoseconds = now.Millisecond * 1000000;
+
+        int width = 4;
+        int height = 4;
+        int step = width * 3; // For rgb8 encoding
+
+        string json = $@"{{
+            ""header"": {{
+                ""stamp"": {{
+                    ""sec"": {unixTime},
+                    ""nanosec"": {nanoseconds}
+                }},
+                ""frame_id"": ""Placeholder""
+            }},
+            ""height"": {height},
+            ""width"": {width},
+            ""encoding"": ""rgb8"",
+            ""is_bigendian"": 0,
+            ""step"": {step},
+            ""data"": [{string.Join(", ", bytes)}]
+        }}";
+
+        var jsonBytes = Encoding.UTF8.GetBytes(json);
+        await clientWebSocket.SendAsync(new ArraySegment<byte>(jsonBytes), WebSocketMessageType.Text, true, CancellationToken.None);
+    }
 
     
+
 
 
     private void OnApplicationQuit()
