@@ -13,7 +13,21 @@ public class SimpleWebSocket : MonoBehaviour
 {
     public string uri = "ws://100.74.140.75:8765"; //ubuntu laptop
     [Space]
-    public string bits;
+    private string _bits;
+    public string bits
+    {
+        get { return _bits; }
+        set
+        {
+            if (_bits != value)
+            {
+                _bits = value;
+                OnBitsChanged?.Invoke(_bits);
+            }
+        }
+    }
+
+    public event Action<string> OnBitsChanged;
     public ClientWebSocket clientWebSocket;
     private int x = 0;
     
@@ -70,7 +84,7 @@ public class SimpleWebSocket : MonoBehaviour
                     bits = BitConverter.ToString(buffer, 0, result.Count); // Make public var and connect to next script
                     Debug.Log($"Received raw data{x++}: {bits}");
 
-                    Decode(bits);
+                    
                 }
                 else
                 {
@@ -83,51 +97,7 @@ public class SimpleWebSocket : MonoBehaviour
             }
         }
     }
-    private void Decode(String bits){ //message is in little endian
-        // int subId;
-        
-        char opcode = bits.Substring(1,2)[0];
-        
-        if(opcode == '1'){
-            
-            string[] hexvaluesarr = bits.Substring(2).Split('-'); //all bits after opcode
-            List<string> hexvalues = hexvaluesarr.ToList();
-            
-            List<int> time = new List<int>();
-            int subID = 0;
-            for(int i = 3; i >= 0; i--){ //iterate through first 4 bytes for subscription id
-            subID+=Convert.ToInt32(hexvalues[i], 16); //hopefully that turns it into base 10, throws error if i specify base 10
-            
-            
-            }
-            hexvalues.RemoveRange(0,4);
-            
-            //iterate through next section (8 bytes) of message (time - nanoseconds)
-            for(int i = 7; i >= 0; i--){ 
-            time.Add(Convert.ToInt32(hexvalues[i], 16));
-            }
-            hexvalues.RemoveRange(0,8);
-            
-            //iterate through next section of message (payload)
-            Debug.Log(hexvalues.ToString());
-            List<byte> byteArray = new List<byte>();
-            foreach(string hex in hexvalues)
-            {
-                byteArray.Add(Convert.ToByte(hex, 16)); // Convert each hex string to a byte
-                Debug.Log("fixed");
-            }
-            string message = Encoding.ASCII.GetString(byteArray.ToArray());
-            Debug.Log(subID);
-            Debug.Log(time.ToString());
-            Debug.Log(message);
-            
-        }
-
-        // byte[] bytes = Encoding.UTF8.GetBytes(bits);
-        //very very very helpful for this: https://github.com/foxglove/ws-protocol/blob/main/docs/spec.md#binary-messages
-        
-
-    }
+    
 
 
 

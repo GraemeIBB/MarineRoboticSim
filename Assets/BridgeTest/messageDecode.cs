@@ -12,25 +12,25 @@ using UnityEngine;
 
 public class messageDecode : MonoBehaviour
 {
-    SimpleWebSocket socket;
-    string bits;
-    string previousBits;
+    private SimpleWebSocket socket;
+    private string previousBits;
 
     void Start()
     {
-        
         socket = GetComponent<SimpleWebSocket>();
-        bits = socket.bits;
+        socket.OnBitsChanged += OnBitsChanged;
+        previousBits = socket.bits;
+
         string example = "01-03-00-00-00-07-53-2F-E0-31-06-0C-18-00-01-00-00-12-00-00-00-48-65-6C-6C-6F-20-57-6F-72-6C-64-3A-20-31-37-39-38-00-00-00";
         Decode(example);
-        
-        
     }
-    void Update(){
-        if (bits != previousBits)
+
+    private void OnBitsChanged(string newBits)
+    {
+        if (newBits != previousBits)
         {
-            Decode(bits);
-            previousBits = bits;
+            Decode(newBits);
+            previousBits = newBits;
         }
     }
 

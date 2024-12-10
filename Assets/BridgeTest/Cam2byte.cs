@@ -37,6 +37,7 @@ public class Cam2byte : MonoBehaviour
         RenderTexture.active = currentRT;
 
         byte[] bytes = image.EncodeToPNG();
+        byte[] bytes2 = image.GetRawTextureData(); //raw pixel data
         Destroy(image);
 
         return bytes;
