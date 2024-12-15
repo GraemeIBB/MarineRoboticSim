@@ -269,6 +269,7 @@ GameObject:
   - component: {fileID: 689064591}
   - component: {fileID: 689064590}
   - component: {fileID: 689064592}
+  - component: {fileID: 689064593}
   m_Layer: 0
   m_Name: Web Socket
   m_TagString: Untagged
@@ -339,6 +340,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24a1622f41fe0b64eb4c6e16d399d96b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &689064593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 689064586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08bdcf76494cfc6449b26d3a2f30cbef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1080132461

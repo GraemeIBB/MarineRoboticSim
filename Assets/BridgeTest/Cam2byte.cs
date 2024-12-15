@@ -23,34 +23,91 @@ public class Cam2byte : MonoBehaviour
 
     private async Task CaptureAndSendLoop()
     {
-        while (true)
+        await Task.Delay(5000); // Wait for the websocket to connect
+        Debug.Log("Starting capture and send loop");
+        while (socket.clientWebSocket.State == System.Net.WebSockets.WebSocketState.Open)
         {
-            Debug.Log("Taking screenshot");
-            byte[] bits = CaptureScreenshot();
-            Debug.Log("Screenshot taken");
-            await socket.sendCam(bits);
+            try
+            {
+                Debug.Log("Taking screenshot");
+                byte[] bits = await CaptureScreenshotAsync();
+                Debug.Log("Screenshot taken, length: " + (bits != null ? bits.Length.ToString() : "null"));
+                await socket.sendCam(bits);
+                Debug.Log("Screenshot sent");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error in CaptureAndSendLoop: {ex.Message}");
+            }
             await Task.Delay(100); // Adjust the delay as needed
-            Debug.Log("Screenshot sent");
         }
+        Debug.Log("Ending capture and send loop");
+    }
+
+    private Task<byte[]> CaptureScreenshotAsync()
+    {
+        var tcs = new TaskCompletionSource<byte[]>();
+        UnityMainThreadDispatcher.Enqueue(() =>
+        {
+            try
+            {
+                byte[] result = CaptureScreenshot();
+                tcs.SetResult(result);
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+        });
+        return tcs.Task;
     }
 
     byte[] CaptureScreenshot()
     {
-        RenderTexture currentRT = RenderTexture.active;
-        RenderTexture.active = renderTexture;
+        try
+        {
+            Debug.Log("CaptureScreenshot: Starting capture");
 
-        camera.Render();
+            if (renderTexture == null)
+            {
+                Debug.LogError("CaptureScreenshot: RenderTexture is null");
+                return null;
+            }
 
-        Texture2D image = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
-        image.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-        image.Apply();
+            if (camera == null)
+            {
+                Debug.LogError("CaptureScreenshot: Camera is null");
+                return null;
+            }
 
-        RenderTexture.active = currentRT;
+            RenderTexture currentRT = RenderTexture.active;
+            RenderTexture.active = renderTexture;
 
-        // byte[] bytes = image.EncodeToPNG();
-        byte[] bytes = image.GetRawTextureData();
-        Destroy(image);
+            Debug.Log("CaptureScreenshot: RenderTexture set");
 
-        return bytes;
+            camera.Render();
+            Debug.Log("CaptureScreenshot: Camera rendered");
+
+            Texture2D image = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
+            image.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+            image.Apply();
+            Debug.Log("CaptureScreenshot: Image read and applied");
+
+            RenderTexture.active = currentRT;
+            Debug.Log("CaptureScreenshot: RenderTexture restored");
+
+            byte[] bytes = image.GetRawTextureData();
+            Debug.Log("CaptureScreenshot: Image data obtained");
+
+            Destroy(image);
+            Debug.Log("CaptureScreenshot: Image destroyed");
+
+            return bytes;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error in CaptureScreenshot: {ex.Message}");
+            return null;
+        }
     }
 }

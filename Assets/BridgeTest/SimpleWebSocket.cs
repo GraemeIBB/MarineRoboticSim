@@ -112,7 +112,7 @@ public class SimpleWebSocket : MonoBehaviour
             ""id"":3,
             ""channelId"": 3,
             ""topic"": ""/chatter"",
-            ""encoding"": ""cdr""
+            ""encoding"": ""json""
             }
         ]
         }";
@@ -157,8 +157,8 @@ public class SimpleWebSocket : MonoBehaviour
         long unixTime = ((DateTimeOffset)now).ToUnixTimeSeconds();
         int nanoseconds = now.Millisecond * 1000000;
 
-        int width = 4;
-        int height = 4;
+        int width = 640;
+        int height = 480;
         int step = width * 3; // For rgb8 encoding
 
         string json = $@"{{
@@ -178,7 +178,13 @@ public class SimpleWebSocket : MonoBehaviour
         }}";
 
         var jsonBytes = Encoding.UTF8.GetBytes(json);
-        await clientWebSocket.SendAsync(new ArraySegment<byte>(jsonBytes), WebSocketMessageType.Text, true, CancellationToken.None);
+        byte[] sendBytes = new byte[jsonBytes.Length + 5];
+        sendBytes[0] = 1; // Opcode for Message Data
+        Array.Copy(BitConverter.GetBytes(4), 0, sendBytes, 1, 4); // Channel ID
+        Array.Copy(jsonBytes, 0, sendBytes, 5, jsonBytes.Length); // Message payload
+        Debug.Log("message packed");
+        await clientWebSocket.SendAsync(new ArraySegment<byte>(sendBytes), WebSocketMessageType.Text, true, CancellationToken.None);
+        Debug.Log("message sent");
     }
 
     

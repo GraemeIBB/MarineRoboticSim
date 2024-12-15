@@ -21,8 +21,7 @@ public class messageDecode : MonoBehaviour
         socket.OnBitsChanged += OnBitsChanged;
         previousBits = socket.bits;
 
-        string example = "01-03-00-00-00-07-53-2F-E0-31-06-0C-18-00-01-00-00-12-00-00-00-48-65-6C-6C-6F-20-57-6F-72-6C-64-3A-20-31-37-39-38-00-00-00";
-        Decode(example);
+        
     }
 
     private void OnBitsChanged(string newBits)
@@ -79,7 +78,7 @@ public class messageDecode : MonoBehaviour
         uint subscriptionId = BitConverter.ToUInt32(data, 1);
         ulong receiveTimestamp = BitConverter.ToUInt64(data, 5);
         byte[] datapayload = data.Skip(13).ToArray();
-        // byte[] topicBytes = data.Skip(14).Take(3).ToArray();  used to get the topic
+        byte[] titleBytes = data.Skip(14).Take(3).ToArray();  
         // byte[] messageLengthBytes = data.Skip(17).Take(4).ToArray(); used to get the message length,and make method more efficient
         byte[] messagePayloadBytes = data.Skip(21).ToArray();
         string messagePayloadString = Encoding.ASCII.GetString(messagePayloadBytes);
@@ -88,7 +87,8 @@ public class messageDecode : MonoBehaviour
         Debug.Log($"Subscription ID: {subscriptionId}");
         Debug.Log($"Receive Timestamp: {receiveTimestamp}");
         Debug.Log($"Payload Length: {datapayload.Length}");
-        Debug.Log($"full payload: {BitConverter.ToString(data)}");
+        Debug.Log($"Title: {BitConverter.ToString(titleBytes)}");
+        // Debug.Log($"full payload: {BitConverter.ToString(data)}");
         Debug.Log($"Raw Payload Bytes: {BitConverter.ToString(messagePayloadBytes)}");
         Debug.Log($"Message Payload: {messagePayloadString}");
     }
